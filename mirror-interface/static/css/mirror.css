@@ -1,0 +1,1130 @@
+/* ============================================================
+   MIRROR MIRROR — What Remains of Me
+   Visual Interface Stylesheet
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap');
+
+/* ── Reset & Base ─────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg:           #000000;
+  --bg-deep:      #050508;
+  --bg-void:      #0a0a0f;
+  --silver:       rgba(200, 205, 215, 0.55);
+  --silver-bright: rgba(210, 218, 228, 0.85);
+  --silver-dim:   rgba(180, 185, 195, 0.30);
+  --silver-ghost: rgba(200, 205, 215, 0.12);
+
+  /* LoRA band palette */
+  --band-0: #1a0e2e;  /* deep violet */
+  --band-1: #0e1a2e;  /* deep indigo */
+  --band-2: #0e2a1a;  /* deep teal */
+  --band-3: #2a1a0e;  /* deep amber */
+  --band-4: #2e0e1a;  /* deep crimson */
+  --band-5: #1a1a0e;  /* deep olive */
+
+  --font-serif:  'Cormorant Garamond', Georgia, serif;
+  --font-mono:   'Courier Prime', 'Courier New', monospace;
+
+  --scanline-h:  3px;
+  --scanline-gap: 6px;
+  --transition-std: 0.4s ease;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--silver);
+  font-family: var(--font-mono);
+  cursor: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Overlay Layers ───────────────────────────────────────── */
+#grain-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.045;
+  filter: url(#grain-filter);
+  width: 100%;
+  height: 100%;
+}
+
+#scanlines-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent calc(var(--scanline-gap) - 1px),
+    rgba(0, 0, 0, 0.35) calc(var(--scanline-gap) - 1px),
+    rgba(0, 0, 0, 0.35) var(--scanline-gap)
+  );
+}
+
+#vignette-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 998;
+  background: radial-gradient(
+    ellipse 90% 85% at 50% 50%,
+    transparent 40%,
+    rgba(0, 0, 0, 0.55) 75%,
+    rgba(0, 0, 0, 0.88) 100%
+  );
+}
+
+/* SVG grain filter source (hidden) */
+#grain-svg {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* ── App Shell ────────────────────────────────────────────── */
+#app {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-rows: 40px 1fr;
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "status"
+    "main";
+  gap: 0;
+  z-index: 100;
+}
+
+/* ── Status Bar ───────────────────────────────────────────── */
+#status-bar {
+  grid-area: status;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  border-bottom: 1px solid var(--silver-ghost);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--silver-dim);
+  background: linear-gradient(to bottom, rgba(5,5,8,0.8), transparent);
+}
+
+#status-bar .status-left,
+#status-bar .status-right {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+#status-bar .status-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--silver-dim);
+  margin-right: 6px;
+  transition: background 0.3s;
+}
+
+#status-bar .status-dot.active {
+  background: rgba(200, 215, 210, 0.9);
+  box-shadow: 0 0 6px rgba(200, 215, 210, 0.6);
+  animation: pulse-dot 2s infinite;
+}
+
+#status-bar .status-dot.error {
+  background: rgba(215, 80, 80, 0.8);
+}
+
+#status-label {
+  letter-spacing: 0.22em;
+  transition: color 0.5s;
+}
+
+#socket-status {
+  font-size: 9px;
+  opacity: 0.6;
+}
+
+#time-display {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  opacity: 0.5;
+}
+
+/* ── Emotion Bars (Left Panel) ────────────────────────────── */
+#emotion-panel {
+  position: fixed;
+  bottom: 24px;
+  left: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0;
+  gap: 7px;
+  z-index: 820;
+  opacity: 0.55;
+  transition: opacity 0.4s;
+  width: 260px;
+}
+
+#emotion-panel:hover {
+  opacity: 0.85;
+}
+
+.emotion-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+.emotion-label {
+  font-family: var(--font-mono);
+  font-size: 7px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--silver-dim);
+  transition: color 0.4s;
+  width: 52px;
+  flex-shrink: 0;
+}
+
+.emotion-label.dominant {
+  color: var(--silver-bright);
+  text-shadow: 0 0 8px rgba(200, 215, 228, 0.4);
+}
+
+.emotion-bar-track {
+  flex: 1;
+  height: 2px;
+  background: rgba(200, 205, 215, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.emotion-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--silver-dim);
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.4s;
+  will-change: width;
+}
+
+.emotion-row.dominant .emotion-bar-fill {
+  background: var(--silver-bright);
+  box-shadow: 0 0 6px rgba(210, 218, 228, 0.5);
+}
+
+.emotion-value {
+  font-size: 7px;
+  letter-spacing: 0.1em;
+  color: var(--silver-dim);
+  text-align: right;
+  transition: color 0.4s;
+  width: 28px;
+  flex-shrink: 0;
+}
+
+/* ── Avatar Area (Center) ─────────────────────────────────── */
+#avatar-area {
+  position: fixed;
+  top: 50px;
+  right: 20px;
+  z-index: 150;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+#avatar-frame {
+  position: relative;
+  width: 480px;
+  height: 720px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  background: radial-gradient(
+    ellipse at 40% 35%,
+    rgba(120, 130, 150, 0.12) 0%,
+    rgba(80, 90, 110, 0.06) 45%,
+    rgba(20, 22, 30, 0.4) 100%
+  );
+  border: 1px solid var(--silver-ghost);
+  animation: avatar-breathe 6s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+#avatar-placeholder::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 5px,
+    rgba(0,0,0,0.15) 5px,
+    rgba(0,0,0,0.15) 6px
+  );
+}
+
+#avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+  display: none;
+  animation: avatar-breathe 6s ease-in-out infinite;
+  position: relative;
+}
+
+#avatar-image.visible {
+  display: block;
+}
+
+#avatar-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+#avatar-video.visible {
+  display: block;
+}
+
+/* Scanline on avatar */
+#avatar-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 4px,
+    rgba(0,0,0,0.18) 4px,
+    rgba(0,0,0,0.18) 5px
+  );
+  pointer-events: none;
+  z-index: 2;
+  border-radius: 4px;
+}
+
+/* Corner decorations on avatar frame */
+#avatar-frame::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border: 1px solid var(--silver-ghost);
+  border-radius: 6px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* OMNI label */
+#avatar-label {
+  position: absolute;
+  bottom: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--silver-dim);
+  white-space: nowrap;
+}
+
+/* ── Camera Preview ───────────────────────────────────────── */
+#camera-preview-wrap {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 820;
+  opacity: 0.55;
+  transition: opacity 0.4s;
+}
+
+#camera-preview-wrap:hover {
+  opacity: 0.85;
+}
+
+#camera-preview {
+  width: 180px;
+  height: 135px;
+  object-fit: cover;
+  border: 1px solid var(--silver-ghost);
+  filter: grayscale(0.4) scaleX(-1);
+  display: block;
+  border-radius: 2px;
+}
+
+#camera-label {
+  font-family: var(--font-mono);
+  font-size: 7px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--silver-dim);
+  text-align: center;
+  margin-top: 3px;
+}
+
+/* ── Band Indicator (hidden — replaced by bottom HUD) ────── */
+#band-indicator {
+  display: none;
+}
+
+.band-pip {
+  width: 8px;
+  height: 28px;
+  border: 1px solid rgba(200, 205, 215, 0.15);
+  transition: background 0.5s, border-color 0.5s, box-shadow 0.5s;
+  position: relative;
+}
+
+.band-pip.active {
+  background: var(--silver);
+  border-color: var(--silver);
+  box-shadow: 0 0 10px rgba(200, 205, 215, 0.35);
+}
+
+.band-pip-label {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 7px;
+  letter-spacing: 0.15em;
+  color: var(--silver-dim);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.band-pip.active .band-pip-label {
+  opacity: 1;
+  color: var(--silver);
+}
+
+/* ── Conversation UI ──────────────────────────────────────── */
+#conversation-overlay {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 60px 36px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+#conversation-overlay.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+#question-subtitle {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 74px;
+  color: rgba(215, 220, 228, 0.88);
+  text-align: center;
+  line-height: 1.2;
+  max-width: 900px;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.8);
+  margin-bottom: 20px;
+  min-height: 2em;
+}
+
+#listening-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--silver-dim);
+  opacity: 0;
+  transition: opacity 0.3s;
+  margin-bottom: 12px;
+}
+
+#listening-indicator.active {
+  opacity: 1;
+}
+
+#listening-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(200, 218, 210, 0.8);
+  animation: pulse-dot 1.2s infinite;
+}
+
+#answer-input-wrap {
+  display: none;
+  width: 100%;
+  max-width: 600px;
+}
+
+#answer-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--silver-ghost);
+  color: var(--silver);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  padding: 8px 4px;
+  outline: none;
+  text-align: center;
+  caret-color: var(--silver);
+}
+
+#answer-input::placeholder {
+  color: var(--silver-dim);
+  opacity: 0.5;
+}
+
+#submit-btn {
+  display: none;
+  margin-top: 10px;
+  background: transparent;
+  border: 1px solid var(--silver-ghost);
+  color: var(--silver-dim);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  padding: 7px 18px;
+  cursor: none;
+  transition: border-color 0.3s, color 0.3s;
+}
+
+#submit-btn:hover {
+  border-color: var(--silver);
+  color: var(--silver);
+}
+
+/* ── Portrait Reveal ──────────────────────────────────────── */
+#portrait-container {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-void);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease;
+}
+
+#portrait-container.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+#portrait-layout {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+
+#portrait-band-pips {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.portrait-pip {
+  width: 6px;
+  height: 24px;
+  border: 1px solid rgba(200, 205, 215, 0.12);
+  transition: all 0.5s;
+}
+
+.portrait-pip.active {
+  background: var(--silver);
+  border-color: var(--silver);
+  box-shadow: 0 0 8px rgba(200, 205, 215, 0.3);
+}
+
+#portrait-frame {
+  position: relative;
+  width: 480px;
+  height: 720px;
+  border: 1px solid rgba(200, 205, 215, 0.28);
+  overflow: visible;
+}
+
+/* Polaroid corner marks */
+#portrait-frame::before,
+#portrait-frame::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: var(--silver-dim);
+  border-style: solid;
+}
+
+#portrait-frame::before {
+  top: -5px;
+  left: -5px;
+  border-width: 1px 0 0 1px;
+}
+
+#portrait-frame::after {
+  bottom: -5px;
+  right: -5px;
+  border-width: 0 1px 1px 0;
+}
+
+/* Additional corners via children */
+#portrait-corner-tr,
+#portrait-corner-bl {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: var(--silver-dim);
+  border-style: solid;
+  pointer-events: none;
+}
+
+#portrait-corner-tr {
+  top: -5px;
+  right: -5px;
+  border-width: 1px 1px 0 0;
+}
+
+#portrait-corner-bl {
+  bottom: -5px;
+  left: -5px;
+  border-width: 0 0 1px 1px;
+}
+
+#portrait-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: blur(0px);
+  transition: filter 0.5s ease;
+}
+
+#portrait-image.blurred {
+  filter: blur(12px) brightness(0.6);
+}
+
+/* Scanline on portrait */
+#portrait-frame .portrait-scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 5px,
+    rgba(0,0,0,0.12) 5px,
+    rgba(0,0,0,0.12) 6px
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+#portrait-caption-block {
+  position: absolute;
+  bottom: -52px;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+#portrait-caption {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: lowercase;
+  color: var(--silver-dim);
+}
+
+#portrait-title {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  color: rgba(200, 205, 215, 0.45);
+}
+
+/* Portrait status bar */
+#portrait-status {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--silver-dim);
+  border-bottom: 1px solid var(--silver-ghost);
+  background: rgba(5, 5, 8, 0.85);
+  z-index: 700;
+  opacity: 0;
+  transition: opacity 0.6s;
+}
+
+#portrait-status.visible {
+  opacity: 1;
+}
+
+/* ── Transition Canvas ────────────────────────────────────── */
+#transition-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 800;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+#transition-canvas.active {
+  opacity: 1;
+}
+
+/* ── Generation Text (Mirror voice during portrait rendering) ── */
+#generation-text {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 801;
+  pointer-events: none;
+  font-family: var(--font-serif);
+  font-size: 74px;
+  font-style: italic;
+  font-weight: 700;
+  color: rgba(200, 210, 220, 0.82);
+  letter-spacing: 0.04em;
+  text-align: center;
+  max-width: 900px;
+  width: 90%;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  text-shadow: 0 0 48px rgba(160, 180, 200, 0.4);
+  line-height: 1.2;
+}
+
+/* ── Start Overlay ────────────────────────────────────────── */
+#start-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  background: var(--bg);
+  transition: opacity 1.2s ease;
+}
+
+#start-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#start-title {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(28px, 4vw, 52px);
+  letter-spacing: 0.12em;
+  color: rgba(210, 215, 225, 0.75);
+  text-align: center;
+}
+
+#start-subtitle {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--silver-dim);
+  text-align: center;
+}
+
+#start-prompt {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: rgba(200, 205, 215, 0.3);
+  animation: blink-prompt 2.2s infinite;
+  margin-top: 20px;
+}
+
+#start-rule {
+  width: 1px;
+  height: 60px;
+  background: linear-gradient(to bottom, transparent, var(--silver-dim), transparent);
+  margin: 0 auto;
+}
+
+/* ── Debug Panel ──────────────────────────────────────────── */
+#debug-panel {
+  position: fixed;
+  top: 48px;
+  right: 70px;
+  z-index: 950;
+  background: rgba(5, 5, 8, 0.92);
+  border: 1px solid rgba(200, 205, 215, 0.1);
+  padding: 14px 18px;
+  width: 240px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: rgba(200, 205, 215, 0.5);
+  display: none;
+  line-height: 1.7;
+}
+
+#debug-panel.visible {
+  display: block;
+}
+
+#debug-panel h4 {
+  font-size: 8px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--silver-dim);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(200, 205, 215, 0.08);
+}
+
+#debug-panel .debug-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 1px 0;
+}
+
+#debug-panel .debug-key {
+  opacity: 0.55;
+}
+
+#debug-panel .debug-val {
+  color: rgba(210, 220, 215, 0.75);
+}
+
+/* ── Flash Overlay ────────────────────────────────────────── */
+#flash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 850;
+  background: white;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.08s;
+}
+
+/* ── Keyframe Animations ──────────────────────────────────── */
+@keyframes avatar-breathe {
+  0%   { transform: scale(1.000); opacity: 0.92; }
+  45%  { transform: scale(1.008); opacity: 1;    }
+  100% { transform: scale(1.000); opacity: 0.92; }
+}
+
+@keyframes avatar-glitch {
+  0%   { transform: translate(0, 0)    skewX(0deg);   }
+  6%   { transform: translate(-3px, 0) skewX(-2deg);  }
+  8%   { transform: translate(3px, 0)  skewX(2deg);   }
+  10%  { transform: translate(0, 0)    skewX(0deg);   }
+  100% { transform: translate(0, 0)    skewX(0deg);   }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1;   transform: scale(1);    }
+  50%       { opacity: 0.3; transform: scale(0.7);  }
+}
+
+@keyframes blink-prompt {
+  0%, 100% { opacity: 0.3; }
+  50%       { opacity: 0.8; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+@keyframes fade-out {
+  from { opacity: 1; transform: translateY(0);   }
+  to   { opacity: 0; transform: translateY(-8px);}
+}
+
+@keyframes portrait-emerge {
+  0%   { filter: blur(18px) brightness(0.4); opacity: 0.6; }
+  60%  { filter: blur(4px)  brightness(0.8); opacity: 0.9; }
+  100% { filter: blur(0px)  brightness(1.0); opacity: 1;   }
+}
+
+@keyframes reveal-flash {
+  0%   { opacity: 0;   }
+  15%  { opacity: 0.7; }
+  100% { opacity: 0;   }
+}
+
+@keyframes subtle-glitch {
+  0%, 85%, 100% { clip-path: none; transform: none; }
+  86% { clip-path: inset(20% 0 55% 0); transform: translateX(-4px); }
+  88% { clip-path: inset(55% 0 15% 0); transform: translateX(4px);  }
+  90% { clip-path: none; transform: none; }
+}
+
+/* Avatar occasional glitch */
+#avatar-placeholder {
+  animation: avatar-breathe 6s ease-in-out infinite,
+             subtle-glitch 14s ease-in-out infinite;
+}
+
+/* ── Utility ──────────────────────────────────────────────── */
+.hidden  { display: none !important; }
+.fade-in { animation: fade-in 0.6s ease both; }
+
+/* Portrait band layout bottom bar */
+/* ── Portrait Picker Grid ─────────────────────────────────── */
+#portrait-picker-grid {
+  position: fixed;
+  right: 32px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 610;
+}
+
+#portrait-picker-grid.visible {
+  display: flex;
+}
+
+.picker-thumb {
+  width: 90px;
+  height: 135px;
+  cursor: pointer;
+  border: 2px solid rgba(200, 205, 215, 0.15);
+  overflow: hidden;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.picker-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.picker-thumb:hover {
+  border-color: rgba(200, 205, 215, 0.5);
+  transform: scale(1.04);
+}
+
+.picker-thumb.selected {
+  border: 4px solid #f5c518;
+  box-shadow: 0 0 18px rgba(245, 197, 24, 0.55);
+}
+
+/* ── Print Button ─────────────────────────────────────────── */
+#portrait-print-btn {
+  position: fixed;
+  bottom: 60px;
+  right: 32px;
+  z-index: 620;
+  display: none;
+  padding: 10px 20px;
+  background: transparent;
+  border: 1px solid rgba(200, 205, 215, 0.5);
+  color: rgba(200, 205, 215, 0.85);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+#portrait-print-btn.visible {
+  display: block;
+}
+
+#portrait-print-btn:hover:not(:disabled) {
+  border-color: rgba(200, 205, 215, 0.9);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+#portrait-print-btn:disabled {
+  cursor: default;
+}
+
+/* Progress fill — sits behind the label text */
+#portrait-print-btn .print-progress-fill {
+  position: absolute;
+  inset: 0;
+  width: 0%;
+  background: rgba(200, 205, 215, 0.18);
+  transition: width 0.6s ease;
+  pointer-events: none;
+}
+
+#portrait-print-btn .print-btn-label {
+  position: relative;
+  z-index: 1;
+}
+
+#post-print-actions {
+  display: none;
+  position: fixed;
+  bottom: 60px;
+  right: 32px;
+  z-index: 620;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+#post-print-actions.visible {
+  display: flex;
+}
+
+#post-print-actions button {
+  padding: 10px 20px;
+  background: transparent;
+  border: 1px solid rgba(200, 205, 215, 0.5);
+  color: rgba(200, 205, 215, 0.85);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+  min-width: 160px;
+  text-align: center;
+}
+
+#post-print-actions button:hover {
+  border-color: rgba(200, 205, 215, 0.9);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+#abort-print-btn {
+  border-color: rgba(200, 100, 100, 0.4) !important;
+  color: rgba(220, 150, 150, 0.8) !important;
+}
+
+#abort-print-btn:hover {
+  border-color: rgba(220, 100, 100, 0.8) !important;
+  color: rgba(255, 160, 160, 0.95) !important;
+}
+
+#done-btn {
+  display: none;
+  position: fixed;
+  bottom: 16px;
+  right: 32px;
+  z-index: 620;
+  padding: 10px 20px;
+  background: transparent;
+  border: 1px solid rgba(200, 100, 100, 0.4);
+  color: rgba(220, 150, 150, 0.8);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+  min-width: 160px;
+  text-align: center;
+}
+
+#done-btn.visible {
+  display: block;
+}
+
+#done-btn:hover {
+  border-color: rgba(220, 100, 100, 0.8);
+  color: rgba(255, 160, 160, 0.95);
+}
+
+#portrait-bottom-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--silver-dim);
+  opacity: 0;
+  transition: opacity 0.6s;
+}
+
+#portrait-bottom-bar.visible {
+  opacity: 1;
+}
+
+#reset-prompt {
+  font-size: 8px;
+  letter-spacing: 0.3em;
+  color: rgba(200, 205, 215, 0.2);
+  animation: blink-prompt 3s infinite;
+}

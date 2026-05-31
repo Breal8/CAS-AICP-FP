@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mirror Mirror — What Remains of Me</title>
+  <link rel="icon" type="image/svg+xml" href="/static/assets/favicon.svg" />
+  <link rel="stylesheet" href="/static/css/mirror.css" />
+
+  <!-- Socket.IO (matches flask-socketio 5.x server) -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"
+          crossorigin="anonymous"></script>
+</head>
+<body>
+
+<!-- ── SVG Grain Filter ──────────────────────────────────── -->
+<svg id="grain-svg" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="grain-filter" x="0%" y="0%" width="100%" height="100%"
+            color-interpolation-filters="linearRGB">
+      <feTurbulence
+        type="fractalNoise"
+        baseFrequency="0.65"
+        numOctaves="3"
+        stitchTiles="stitch"
+        result="noise" />
+      <feColorMatrix type="saturate" values="0" in="noise" result="grey" />
+      <feBlend in="SourceGraphic" in2="grey" mode="overlay" />
+    </filter>
+  </defs>
+</svg>
+
+<!-- ── Overlay Layers ────────────────────────────────────── -->
+<div id="grain-overlay"></div>
+<div id="scanlines-overlay"></div>
+<div id="vignette-overlay"></div>
+
+<!-- ── Start / Click-to-Enter Overlay ───────────────────── -->
+<div id="start-overlay">
+  <div id="start-title">Mirror Mirror</div>
+  <div id="start-rule"></div>
+  <div id="start-subtitle">What Remains of Me</div>
+  <div id="start-prompt">— approach the mirror —</div>
+</div>
+
+<!-- ── Flash Overlay (Reveal effect) ────────────────────── -->
+<div id="flash-overlay"></div>
+
+<!-- ── Generation Text (Mirror voice during portrait rendering) ── -->
+<div id="generation-text"></div>
+
+<!-- ── Transition Canvas ─────────────────────────────────── -->
+<canvas id="transition-canvas"></canvas>
+
+<!-- ── Portrait Container ────────────────────────────────── -->
+<div id="portrait-container">
+  <div id="portrait-status">
+    <span id="portrait-status-left">subject — identified</span>
+    <span id="portrait-status-right">rendering complete</span>
+  </div>
+
+  <div id="portrait-layout">
+    <!-- Band pips (left) -->
+    <div id="portrait-band-pips">
+      <div class="portrait-pip" data-band="0"></div>
+      <div class="portrait-pip" data-band="1"></div>
+      <div class="portrait-pip" data-band="2"></div>
+      <div class="portrait-pip" data-band="3"></div>
+      <div class="portrait-pip" data-band="4"></div>
+      <div class="portrait-pip" data-band="5"></div>
+    </div>
+
+    <!-- Portrait frame (Polaroid) -->
+    <div id="portrait-frame">
+      <div id="portrait-corner-tr"></div>
+      <div id="portrait-corner-bl"></div>
+      <img id="portrait-image" src="" alt="Generated Portrait" />
+      <div class="portrait-scanlines"></div>
+
+      <div id="portrait-caption-block">
+        <div id="portrait-caption">what remains of me</div>
+        <div id="portrait-title">Mirror Mirror — What Remains of Me</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4-variant picker -->
+  <div id="portrait-picker-grid"></div>
+
+  <!-- Print button -->
+  <button id="portrait-print-btn">
+    <span class="print-progress-fill"></span>
+    <span class="print-btn-label">PRINT THIS ONE</span>
+  </button>
+
+  <button id="done-btn">DONE</button>
+
+  <!-- Post-print actions (shown after successful print) -->
+  <div id="post-print-actions">
+    <button id="print-again-btn">PRINT ANOTHER</button>
+    <button id="abort-print-btn">DONE</button>
+  </div>
+
+  <div id="portrait-bottom-bar">
+    <span id="reset-prompt">— press R to reset —</span>
+  </div>
+</div>
+
+<!-- ── Main App Grid ─────────────────────────────────────── -->
+<div id="app">
+
+  <!-- Status Bar -->
+  <div id="status-bar">
+    <div class="status-left">
+      <span>
+        <span class="status-dot" id="camera-dot"></span>
+        <span>CAM</span>
+      </span>
+      <span>
+        <span class="status-dot" id="socket-dot"></span>
+        <span id="socket-status">DISCONNECTED</span>
+      </span>
+    </div>
+
+    <div class="status-center">
+      <span id="status-label">— IDLE —</span>
+    </div>
+
+    <div class="status-right">
+      <span id="time-display">00:00:00</span>
+    </div>
+  </div>
+
+  <!-- Emotion Bars (left) -->
+  <div id="emotion-panel">
+    <div class="emotion-row" data-emotion="angry">
+      <div class="emotion-label">ANGRY</div>
+      <div class="emotion-bar-track">
+        <div class="emotion-bar-fill"></div>
+      </div>
+      <div class="emotion-value">0.00</div>
+    </div>
+    <div class="emotion-row" data-emotion="disgust">
+      <div class="emotion-label">DISGUST</div>
+      <div class="emotion-bar-track">
+        <div class="emotion-bar-fill"></div>
+      </div>
+      <div class="emotion-value">0.00</div>
+    </div>
+    <div class="emotion-row" data-emotion="fear">
+      <div class="emotion-label">FEAR</div>
+      <div class="emotion-bar-track">
+        <div class="emotion-bar-fill"></div>
+      </div>
+      <div class="emotion-value">0.00</div>
+    </div>
+    <div class="emotion-row" data-emotion="happy">
+      <div class="emotion-label">HAPPY</div>
+      <div class="emotion-bar-track">
+        <div class="emotion-bar-fill"></div>
+      </div>
+      <div class="emotion-value">0.00</div>
+    </div>
+    <div class="emotion-row" data-emotion="sad">
+      <div class="emotion-label">SAD</div>
+      <div class="emotion-bar-track">
+        <div class="emotion-bar-fill"></div>
+      </div>
+      <div class="emotion-value">0.00</div>
+    </div>
+    <div class="emotion-row" data-emotion="surprise">
+      <div class="emotion-label">SURPRISE</div>
+      <div class="emotion-bar-track">
+        <div class="emotion-bar-fill"></div>
+      </div>
+      <div class="emotion-value">0.00</div>
+    </div>
+    <div class="emotion-row" data-emotion="neutral">
+      <div class="emotion-label">NEUTRAL</div>
+      <div class="emotion-bar-track">
+        <div class="emotion-bar-fill"></div>
+      </div>
+      <div class="emotion-value">0.00</div>
+    </div>
+  </div>
+
+  <!-- Avatar (center) -->
+  <div id="avatar-area">
+    <div id="avatar-frame">
+      <div id="avatar-placeholder"></div>
+      <img id="avatar-image" src="" alt="OMNI Avatar" />
+      <video id="avatar-video" playsinline></video>
+      <div id="avatar-label">OMNI</div>
+    </div>
+  </div>
+
+  <!-- Band Indicator (right) -->
+  <div id="band-indicator">
+    <div class="band-pip" data-band="0">
+      <span class="band-pip-label">I</span>
+    </div>
+    <div class="band-pip" data-band="1">
+      <span class="band-pip-label">II</span>
+    </div>
+    <div class="band-pip" data-band="2">
+      <span class="band-pip-label">III</span>
+    </div>
+    <div class="band-pip" data-band="3">
+      <span class="band-pip-label">IV</span>
+    </div>
+    <div class="band-pip" data-band="4">
+      <span class="band-pip-label">V</span>
+    </div>
+    <div class="band-pip" data-band="5">
+      <span class="band-pip-label">VI</span>
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+<!-- ── Self-view: Pi camera snapshot polling ──────────────── -->
+<div id="camera-preview-wrap">
+  <img id="camera-preview" src="" alt="" />
+  <div id="camera-label">YOU</div>
+</div>
+
+<!-- ── Conversation Overlay ──────────────────────────────── -->
+<div id="conversation-overlay">
+  <div id="question-subtitle"></div>
+  <div id="listening-indicator">
+    <div id="listening-dot"></div>
+    <span>listening</span>
+  </div>
+  <div id="answer-input-wrap">
+    <input id="answer-input" type="text" placeholder="speak or type your answer…" autocomplete="off" />
+    <button id="submit-btn">submit</button>
+  </div>
+</div>
+
+<!-- ── Debug Panel ───────────────────────────────────────── -->
+<div id="debug-panel">
+  <h4>Debug</h4>
+  <div class="debug-row">
+    <span class="debug-key">State</span>
+    <span class="debug-val" id="dbg-state">idle</span>
+  </div>
+  <div class="debug-row">
+    <span class="debug-key">Socket</span>
+    <span class="debug-val" id="dbg-socket">—</span>
+  </div>
+  <div class="debug-row">
+    <span class="debug-key">Camera</span>
+    <span class="debug-val" id="dbg-camera">—</span>
+  </div>
+  <div class="debug-row">
+    <span class="debug-key">FPS</span>
+    <span class="debug-val" id="dbg-fps">—</span>
+  </div>
+  <div class="debug-row">
+    <span class="debug-key">Band</span>
+    <span class="debug-val" id="dbg-band">—</span>
+  </div>
+  <div class="debug-row">
+    <span class="debug-key">Emotion</span>
+    <span class="debug-val" id="dbg-emotion">—</span>
+  </div>
+  <div class="debug-row">
+    <span class="debug-key">TTS</span>
+    <span class="debug-val" id="dbg-tts">—</span>
+  </div>
+  <div class="debug-row">
+    <span class="debug-key">STT</span>
+    <span class="debug-val" id="dbg-stt">—</span>
+  </div>
+  <div class="debug-row">
+    <span class="debug-key">Phase</span>
+    <span class="debug-val" id="dbg-phase">—</span>
+  </div>
+</div>
+
+<!-- ── JavaScript Modules ────────────────────────────────── -->
+<script src="/static/js/socket-client.js?v=9"></script>
+<script src="/static/js/camera.js?v=9"></script>
+<script src="/static/js/emotion-display.js?v=9"></script>
+<script src="/static/js/avatar.js?v=9"></script>
+<script src="/static/js/conversation-ui.js?v=9"></script>
+<script src="/static/js/transition.js?v=9"></script>
+<script src="/static/js/portrait-reveal.js?v=9"></script>
+<script src="/static/js/main.js?v=9"></script>
+
+</body>
+</html>

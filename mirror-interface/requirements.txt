@@ -1,0 +1,15 @@
+flask>=3.0.0
+flask-socketio>=5.3.0
+python-socketio>=5.9.0
+fer>=22.5.1
+deepface>=0.0.89
+eventlet>=0.33.0
+requests>=2.31.0
+Pillow>=10.0.0
+numpy>=1.24.0
+
+# Pi hardware & audio
+picamera2>=0.3.12; platform_machine=='aarch64' or platform_machine=='armv7l'
+vosk>=0.3.45
+pyaudio>=0.2.13
+bleak>=0.21.0
