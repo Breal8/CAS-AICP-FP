@@ -7,6 +7,9 @@ Final project for the CAS in AI & Creative Practice.
 An interactive art installation where visitors stand in front of a screen shaped like a mirror and have an intimate AI-driven conversation with **Mira** — a reflective presence that listens, observes, and generates a portrait of the visitor.
 
 ---
+## Overview installation:
+<img width="2400" height="1792" alt="Image" src="https://github.com/user-attachments/assets/45392ac1-eeac-4b6c-956d-d21ee4bd6c5b" />
+
 
 ## Folder Structure
 
